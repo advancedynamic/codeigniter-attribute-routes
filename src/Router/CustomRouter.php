@@ -8,62 +8,68 @@ use CodeIgniter\Router\RouteCollectionInterface;
 use CodeIgniter\HTTP\RequestInterface;
 
 class CustomRouter extends Router {
-
     private $controllerNamespaces;
 
-    public function __construct(RouteCollectionInterface $routes, RequestInterface $request = null, array $controllerNamespace = []) {
+    public function __construct(
+        RouteCollectionInterface $routes, 
+        ?RequestInterface $request = null, 
+        array $controllerNamespace = []
+    ) {
         parent::__construct($routes, $request);
-
         $this->controllerNamespaces = $controllerNamespace;
+        $this->collection->setDefaultNamespace('');
     }
 
     public function initialize() {
-        foreach ($this->controllerNamespaces as $namespace) {
+        $namespaces = [];
+        foreach ($this->controllerNamespaces as $nsPatternOriginal) {
+            if (strpos($nsPatternOriginal, '*') !== false) {
+                $pos    = strpos($nsPatternOriginal, '*');
+                $before = substr($nsPatternOriginal, 0, $pos);
+                $after  = substr($nsPatternOriginal, $pos + 1);
+    
+                $beforePath = ROOTPATH . str_replace('\\', DIRECTORY_SEPARATOR, preg_replace('/^Modules/', 'modules', $before));
+                $afterPath = str_replace('\\', DIRECTORY_SEPARATOR, $after);
+    
+                $filePattern = $beforePath . '*' . $afterPath;
+                $moduleDirs  = glob($filePattern, GLOB_ONLYDIR);
+                foreach ($moduleDirs as $dir) {
+                    $moduleName = basename(dirname($dir));
+                    $realNamespace = str_replace('*', $moduleName, $nsPatternOriginal);
+                    $namespaces[] = $realNamespace;
+                }
+            } else {
+                $namespaces[] = $nsPatternOriginal;
+            }
+        }
+        
+        foreach ($namespaces as $namespace) {
             $scanner = new RouteScanner();
-            $routes = $scanner->scan($namespace);
-
+            $routes  = $scanner->scan($namespace);
             foreach ($routes as $route) {
+                if (strpos($route['action'], '\\') === false) {
+                    // Ensure we use leading backslash for absolute namespace
+                    $namespace = '\\' . trim($namespace, '\\');
+                    $action = trim($route['action'], '\\');
+                    $route['action'] = $namespace . '\\' . $action;
+                }
                 $this->addRouteWithPattern($route);
             }
         }
-    }    
-
+    }
+    
     protected function addRouteWithPattern($routeInfo) {
-        $actionexplode = array();
-        $actionArray = array();
-        // Check if 'method' key is set and is a non-empty string
         $method = strtolower($routeInfo['method']);
         if (!in_array($method, ['get', 'post', 'put', 'delete', 'patch', 'options', 'head', ''], true)) {
-            throw new \Exception("Unsupported HTTP method  $method attempted in routing.");
+            throw new \Exception("Unsupported HTTP method $method attempted in routing.");
         }
-        $method = strtolower($routeInfo['method']);
-        if(!empty($method)) {
-            $action = $routeInfo['action'];
+        
+        if (!empty($method)) {
             $path = $routeInfo['path'] . ($routeInfo['pattern'] ?? '');
             $filter = $routeInfo['filter'] ?? [];
-
-            // Add the route
-            // Dynamically call the method on the RouteCollection
-            preg_match_all('/\([^()]+\)/', $path, $match);
-
-            if((isset($match[0][0]))) {
-                $actionArray[] = $action;
-                for($i=1; $i<=count($match[0]);$i++) {
-                    $actionArray[] = '$'.$i;
-                }
-
-                $action = implode('/', $actionArray);
-            }
-
-            $actionexplode = explode('\\', $action);
-            $action = end($actionexplode);
-            array_pop($actionexplode);
-            $actionnamespace = implode('\\', $actionexplode);
-
-            if(count($filter)>0)
-                array_push($filter, array('namespace' => $actionnamespace));
-
-            $this->collection->$method($path, $action, $filter);
+            
+            // Register the route with absolute namespace
+            $this->collection->$method($path, $routeInfo['action'], $filter);
         }
     }
 }

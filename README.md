@@ -74,11 +74,14 @@ class MyController {
     **Modify your app/Config/Routes.php to use the custom router:**
 
     ```php
-    use Advancedynamic\Attributeroutes\Router\CustomRouter;
+    use Advancedynamic\Codeigniter\Attributeroutes\Router\CustomRouter;
     use Config\Services;
 
     $routes = Services::routes();
-    $customRouter = new CustomRouter($routes, Services::request(), ['App\\Controllers', 'Modules\\Dashboard\\Controllers']);
+    $routes->setDefaultNamespace('');
+
+    // Wildcard namespace: the '*' will be replaced by each module folder under ROOTPATH/modules
+    $customRouter = new CustomRouter($routes, Services::request(), ['App\\Controllers', 'Modules\\*\\Controllers']);
     $customRouter->initialize();
 
     Services::injectMock('router', $customRouter);
