@@ -8,18 +8,21 @@ use CodeIgniter\Router\RouteCollectionInterface;
 use CodeIgniter\HTTP\RequestInterface;
 
 class CustomRouter extends Router {
-    private $controllerNamespaces;
+    private array $controllerNamespaces;
+    private string $modulesPath;
 
     public function __construct(
         RouteCollectionInterface $routes, 
         ?RequestInterface $request = null, 
-        array $controllerNamespace = []
+        array $controllerNamespace = [],
+        ?string $modulesPath = null
     ) {
         parent::__construct($routes, $request);
         $this->controllerNamespaces = $controllerNamespace;
+        $this->modulesPath = $modulesPath ?? 'modules'; // default to 'modules' if not provided
         $this->collection->setDefaultNamespace('');
     }
-
+        
     public function initialize() {
         $namespaces = [];
         foreach ($this->controllerNamespaces as $nsPatternOriginal) {
@@ -28,7 +31,8 @@ class CustomRouter extends Router {
                 $before = substr($nsPatternOriginal, 0, $pos);
                 $after  = substr($nsPatternOriginal, $pos + 1);
     
-                $beforePath = ROOTPATH . str_replace('\\', DIRECTORY_SEPARATOR, preg_replace('/^Modules/', 'modules', $before));
+                $beforePath = ROOTPATH . str_replace('\\', DIRECTORY_SEPARATOR, preg_replace('/^Modules/', $this->modulesPath, $before));
+                
                 $afterPath = str_replace('\\', DIRECTORY_SEPARATOR, $after);
     
                 $filePattern = $beforePath . '*' . $afterPath;
