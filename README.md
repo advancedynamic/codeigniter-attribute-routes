@@ -17,12 +17,12 @@ This library enhances the routing system of CodeIgniter 4 by introducing PHP 8 A
    Add the library to your CodeIgniter 4 project using Composer:
 
    ```bash
-   composer require galihlasahido/codeigniter-attributeroutes
+   composer require advancedynamic/codeigniter-attributeroutes
     ```
 
 2. **Update the Bootstrap File**
     ```php
-    use Galihlasahido\Attributeroutes\Router\CustomRouter;
+    use Advancedynamic\Attributeroutes\Router\CustomRouter;
     use Config\Services;
 
     $routes = Services::routes();
@@ -43,8 +43,8 @@ Use attributes to define routes directly in the controller methods:
 ```php
 namespace App\Controllers;
 
-use Galihlasahido\Codeigniter\Attributeroutes\Attributes\GetRoute;
-use Galihlasahido\Codeigniter\Attributeroutes\Attributes\PostRoute;
+use Advancedynamic\Codeigniter\Attributeroutes\Attributes\GetRoute;
+use Advancedynamic\Codeigniter\Attributeroutes\Attributes\PostRoute;
 
 class MyController {
     #[GetRoute('/', ['filter'=> 'MyFilter'])]
@@ -74,7 +74,7 @@ class MyController {
     **Modify your app/Config/Routes.php to use the custom router:**
 
     ```php
-    use Galihlasahido\Attributeroutes\Router\CustomRouter;
+    use Advancedynamic\Attributeroutes\Router\CustomRouter;
     use Config\Services;
 
     $routes = Services::routes();
@@ -115,7 +115,7 @@ class MyController {
 
     namespace Modules\Dashboard\Controllers;
 
-    use Galihlasahido\Codeigniter\Attributeroutes\Attributes\GetRoute;
+    use Advancedynamic\Codeigniter\Attributeroutes\Attributes\GetRoute;
 
     class Dashboard extends BaseController {
         
